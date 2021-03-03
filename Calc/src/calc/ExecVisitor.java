@@ -3,11 +3,12 @@ package calc;
 import org.antlr.v4.runtime.Token;
 import ast.*;
 
+import java.util.HashMap;
 import java.util.List;
 
 public class ExecVisitor extends CalcBaseVisitor<Integer> {
 
-    int[] store = new int[26];
+    HashMap<String, Integer> store = new HashMap<String, Integer>();
 
 	@Override 
 	public Integer visitProg(CalcParser.ProgContext ctx) { 
@@ -23,9 +24,7 @@ public class ExecVisitor extends CalcBaseVisitor<Integer> {
 
 	@Override 
 	public Integer visitSet(CalcParser.SetContext ctx) { 
-	    int value = visit(ctx.expr()); 
-	    int address = ctx.var().ID().getText().charAt(0) - 'a'; 
-            store[address] = value;
+	    store.put(ctx.var().ID().getText(), visit(ctx.expr()));
 	    return 0;
 	}
 
@@ -62,8 +61,7 @@ public class ExecVisitor extends CalcBaseVisitor<Integer> {
 
 	@Override 
 	public Integer visitId(CalcParser.IdContext ctx) { 
-	    int address = ctx.ID().getText().charAt(0) - 'a';
-	    return store[address]; 
+	    return store.get(ctx.ID().getText());
 	}
 
 	@Override 
