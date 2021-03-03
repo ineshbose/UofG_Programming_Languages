@@ -21,7 +21,7 @@ com
 // Expressions
 
 expr
-	:	prim (operator+=(PLUS | MINUS | TIMES) prim)* # op
+	:	prim (operator+=(PLUS | MINUS | TIMES | DIV) prim)* # op
 	;
 
 prim		        
@@ -43,6 +43,7 @@ ASSN	:	'=' ;
 PLUS	:	'+' ;
 MINUS	:	'-' ;
 TIMES	:	'*' ;
+DIV		:	'/' ;
 LPAR	:	'(' ;
 RPAR	:	')' ;
 

@@ -46,6 +46,9 @@ public class ExecVisitor extends CalcBaseVisitor<Integer> {
 		case CalcParser.TIMES:
 		    value = value * visit(prims.get(i));
 		    break;
+		case CalcParser.DIV:
+			value = value / visit(prims.get(i));
+			break;
 		default:
 		}
 	    }
