@@ -10,6 +10,8 @@ ID=9
 NUM=10
 EOL=11
 SPACE=12
+SCOMMENT=13
+MCOMMENT=14
 'put'=1
 'set'=2
 '='=3
