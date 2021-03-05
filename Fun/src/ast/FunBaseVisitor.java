@@ -1,6 +1,6 @@
 // Generated from src/ast/Fun.g4 by ANTLR 4.9.1
 
-	package ast;
+    package ast;
 
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
@@ -34,6 +34,13 @@ public class FunBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements Fu
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitFunc(FunParser.FuncContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitFormalseq(FunParser.FormalseqContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -166,5 +173,5 @@ public class FunBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements Fu
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitActual(FunParser.ActualContext ctx) { return visitChildren(ctx); }
+	@Override public T visitActualseq(FunParser.ActualseqContext ctx) { return visitChildren(ctx); }
 }

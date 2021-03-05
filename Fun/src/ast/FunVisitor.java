@@ -1,6 +1,6 @@
 // Generated from src/ast/Fun.g4 by ANTLR 4.9.1
 
-	package ast;
+    package ast;
 
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -33,6 +33,13 @@ public interface FunVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitFunc(FunParser.FuncContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code formalseq}
+	 * labeled alternative in {@link FunParser#formal_decl_seq}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFormalseq(FunParser.FormalseqContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code formal}
 	 * labeled alternative in {@link FunParser#formal_decl}.
@@ -158,9 +165,10 @@ public interface FunVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitParens(FunParser.ParensContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link FunParser#actual}.
+	 * Visit a parse tree produced by the {@code actualseq}
+	 * labeled alternative in {@link FunParser#actual_seq}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitActual(FunParser.ActualContext ctx);
+	T visitActualseq(FunParser.ActualseqContext ctx);
 }
