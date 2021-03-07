@@ -13,9 +13,10 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 import org.antlr.v4.runtime.misc.*;
 
-import java.util.List;
-
 import ast.*;
+
+import java.util.List;
+import java.util.ArrayList;
 
 public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements FunVisitor<Type> {
 
@@ -62,9 +63,11 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	private void predefine () {
 	// Add predefined procedures to the type table.
 		typeTable.put("read",
-		   new Type.Mapping(Type.VOID, Type.INT));
+			      new Type.Mapping(Type.EMPTY, Type.INT));
+		ArrayList<Type> writeParams = new ArrayList<Type>();
+		writeParams.add(Type.INT);
 		typeTable.put("write",
-		   new Type.Mapping(Type.INT, Type.VOID));
+			      new Type.Mapping(new Type.Sequence(writeParams), Type.VOID));
 	}
 
 	private void define (String id, Type type,
@@ -94,7 +97,7 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	      new Type.Pair(Type.INT, Type.INT), Type.BOOL),
 	   ARITHTYPE = new Type.Mapping(
 	      new Type.Pair(Type.INT, Type.INT), Type.INT),
-	   MAINTYPE = new Type.Mapping(Type.VOID, Type.VOID);
+	    MAINTYPE = new Type.Mapping(Type.EMPTY, Type.VOID);
 
 	private void checkType (Type typeExpected,
 	                        Type typeActual,
@@ -180,11 +183,11 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	public Type visitProc(FunParser.ProcContext ctx) {
 	    typeTable.enterLocalScope();
 	    Type t;
-	    FunParser.Formal_declContext fd = ctx.formal_decl();
+	    FunParser.Formal_decl_seqContext fd = ctx.formal_decl_seq();
 	    if (fd != null)
 		t = visit(fd);
 	    else
-		t = Type.VOID;
+		t = Type.EMPTY;
 	    Type proctype = new Type.Mapping(t, Type.VOID);
 	    define(ctx.ID().getText(), proctype, ctx);
 	    List<FunParser.Var_declContext> var_decl = ctx.var_decl();
@@ -206,24 +209,36 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	    typeTable.enterLocalScope();
 	    Type t1 = visit(ctx.type());
 	    Type t2;
-	    FunParser.Formal_declContext fd = ctx.formal_decl();
+	    FunParser.Formal_decl_seqContext fd = ctx.formal_decl_seq();
 	    if (fd != null)
 		t2 = visit(fd);
 	    else
-		t2 = Type.VOID;
+		t2 = Type.EMPTY;
 	    Type functype = new Type.Mapping(t2, t1);
 	    define(ctx.ID().getText(), functype, ctx);
 	    List<FunParser.Var_declContext> var_decl = ctx.var_decl();
 	    for (FunParser.Var_declContext vd : var_decl)
 		visit(vd);
 	    visit(ctx.seq_com());
-	    Type returntype = visit(ctx.expr());
-	    checkType(t1, returntype, ctx);
 	    typeTable.exitLocalScope();
 	    define(ctx.ID().getText(), functype, ctx);
 	    return null;
 	}
+    
+    /**
+	 * Visit a parse tree produced by the {@code formalseq}
+	 * labeled alternative in {@link FunParser#formal_decl_seq}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+    public Type visitFormalseq(FunParser.FormalseqContext ctx) {
+	ArrayList<Type> types = new ArrayList<Type>();
+	for (FunParser.Formal_declContext fc : ctx.formal_decl())
+	    types.add(visit(fc));
+	return new Type.Sequence(types);
+    }
 
+    
 	/**
 	 * Visit a parse tree produced by the {@code formal}
 	 * labeled alternative in {@link FunParser#formal_decl}.
@@ -232,13 +247,8 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	 */
 	public Type visitFormal(FunParser.FormalContext ctx) {
 	    FunParser.TypeContext tc = ctx.type();
-	    Type t;
-	    if (tc != null) {
-		t = visit(tc);
-		define(ctx.ID().getText(), t, ctx);
-	    }
-	    else
-		t = Type.VOID;
+	    Type t = visit(tc);
+	    define(ctx.ID().getText(), t, ctx);
 	    return t;
 	}
 
@@ -296,7 +306,12 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	 * @return the visitor result
 	 */
 	public Type visitProccall(FunParser.ProccallContext ctx) {
-	    Type t = visit(ctx.actual());
+	    FunParser.Actual_seqContext actuals = ctx.actual_seq();
+	    Type t;
+	    if (actuals != null)
+		t = visit(actuals);
+	    else
+		t = new Type.Sequence(new ArrayList<Type>());
 	    Type tres = checkCall(ctx.ID().getText(), t, ctx);
 	    if (! tres.equiv(Type.VOID))
 		reportError("procedure should be void", ctx);
@@ -352,9 +367,6 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	    if (ctx.e2 != null) {
 		Type t2 = visit(ctx.e2);
 		return checkBinary(COMPTYPE, t1, t2, ctx);
-		// COMPTYPE is INT x INT -> BOOL
-		// checkBinary checks that t1 and t2 are INT and returns BOOL
-		// If necessary it produces an error message.
 	    }
 	    else {
 		return t1;
@@ -424,10 +436,15 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	 * @return the visitor result
 	 */
 	public Type visitFunccall(FunParser.FunccallContext ctx) {
-	    Type t = visit(ctx.actual());
+	    FunParser.Actual_seqContext actuals = ctx.actual_seq();
+	    Type t;
+	    if (actuals != null)
+		t = visit(actuals);
+	    else
+		t = new Type.Sequence(new ArrayList<Type>());
 	    Type tres = checkCall(ctx.ID().getText(), t, ctx);
 	    if (tres.equiv(Type.VOID))
-		reportError("procedure should be non-void", ctx);
+		reportError("function should be non-void", ctx);
 	    return tres;
 	}
 
@@ -452,20 +469,20 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	    return visit(ctx.expr());
 	}
 
-	/**
-	 * Visit a parse tree produced by {@link FunParser#actual}.
+        
+
+    /**
+	 * Visit a parse tree produced by the {@code actualseq}
+	 * labeled alternative in {@link FunParser#actual_seq}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	public Type visitActual(FunParser.ActualContext ctx) {
-	    FunParser.ExprContext ec = ctx.expr();
-	    Type t;
-	    if (ec != null) {
-		t = visit(ec);
-	    }
-	    else
-		t = Type.VOID;
-	    return t;
-	}
+	public Type visitActualseq(FunParser.ActualseqContext ctx) {
+	    ArrayList<Type> types = new ArrayList<Type>();
+	    for (FunParser.ExprContext fc : ctx.expr())
+		types.add(visit(fc));
+	    return new Type.Sequence(types);
+    }
+    
 
 }
