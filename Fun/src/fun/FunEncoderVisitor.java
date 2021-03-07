@@ -9,7 +9,10 @@
 
 package fun;
 
+import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
+import org.antlr.v4.runtime.misc.*;
+
 import java.util.List;
 
 import ast.*;
@@ -73,7 +76,7 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	    currentLocale = Address.LOCAL;
 	    localvaraddr = 2;
 	    // ... allows 2 words for link data
-	    FunParser.Formal_declContext fd = ctx.formal_decl();
+	    FunParser.Formal_decl_seqContext fd = ctx.formal_decl_seq();
 	    if (fd != null)
 		visit(fd);
 	    List<FunParser.Var_declContext> var_decl = ctx.var_decl();
@@ -100,14 +103,13 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	    currentLocale = Address.LOCAL;
 	    localvaraddr = 2;
 	    // ... allows 2 words for link data
-	    FunParser.Formal_declContext fd = ctx.formal_decl();
+	    FunParser.Formal_decl_seqContext fd = ctx.formal_decl_seq();
 	    if (fd != null)
 		visit(fd);
 	    List<FunParser.Var_declContext> var_decl = ctx.var_decl();
 	    for (FunParser.Var_declContext vd : var_decl)
 		visit(vd);
 	    visit(ctx.seq_com());
-            visit(ctx.expr());
 	    obj.emit11(SVM.RETURN, 1);
 	    addrTable.exitLocalScope();
 	    currentLocale = Address.GLOBAL;
@@ -120,13 +122,23 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
+	public Void visitFormalseq(FunParser.FormalseqContext ctx) {
+	    for (FunParser.Formal_declContext fc : ctx.formal_decl())
+		visit(fc);
+	    return null;
+	}
+
+        /**
+	 * Visit a parse tree produced by the {@code formal}
+	 * labeled alternative in {@link FunParser#formal_decl}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
 	public Void visitFormal(FunParser.FormalContext ctx) {
 	    FunParser.TypeContext tc = ctx.type();
-	    if (tc != null) {
-		String id = ctx.ID().getText();
-		addrTable.put(id, new Address(localvaraddr++, Address.LOCAL));
-		obj.emit11(SVM.COPYARG, 1); 
-	    }
+	    String id = ctx.ID().getText();
+	    addrTable.put(id, new Address(localvaraddr++, Address.LOCAL));
+	    obj.emit11(SVM.COPYARG, 1); 
 	    return null;
 	}
 
@@ -198,7 +210,9 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	 * @return the visitor result
 	 */
 	public Void visitProccall(FunParser.ProccallContext ctx) {
-	    visit(ctx.actual());
+	    FunParser.Actual_seqContext actuals = ctx.actual_seq();
+	    if (actuals != null)
+		visit(ctx.actual_seq());
 	    String id = ctx.ID().getText();
 	    Address procaddr = addrTable.get(id);
 	    // Assume procaddr.locale == CODE.
@@ -374,7 +388,9 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	 * @return the visitor result
 	 */
 	public Void visitFunccall(FunParser.FunccallContext ctx) {
-	    visit(ctx.actual());
+	    FunParser.Actual_seqContext actuals = ctx.actual_seq();
+	    if (actuals != null)
+		visit(ctx.actual_seq());
 	    String id = ctx.ID().getText();
 	    Address funcaddr = addrTable.get(id);
 	    // Assume that funcaddr.locale == CODE.
@@ -405,17 +421,19 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	    return null;
 	}
 
-	/**
-	 * Visit a parse tree produced by {@link FunParser#actual}.
+
+    /**
+	 * Visit a parse tree produced by the {@code actualseq}
+	 * labeled alternative in {@link FunParser#actual_seq}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	public Void visitActual(FunParser.ActualContext ctx) {
-	    FunParser.ExprContext ec = ctx.expr();
-	    if (ec != null) {
-		visit(ec);
-	    }
+    
+	public Void visitActualseq(FunParser.ActualseqContext ctx) {
+	    for (FunParser.ExprContext fc : ctx.expr())
+		visit(fc);
 	    return null;
-	}
+    }
+    
 
 }
