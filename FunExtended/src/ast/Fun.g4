@@ -58,15 +58,28 @@ type
 
 com
 	:	ID ASSN expr              # assn
-	|	ID LPAR actual_seq? RPAR       # proccall
-							 
+	|	ID LPAR actual_seq? RPAR  # proccall
+
 	|	IF expr COLON c1=seq_com
-		  ( DOT              
-		  | ELSE COLON c2=seq_com DOT   
+		  ( DOT
+		  | ELSE COLON c2=seq_com DOT
 		  )                       # if
 
-	|	WHILE expr COLON          
+	|	WHILE expr COLON
 		  seq_com DOT             # while
+
+	|	FOR ID ASSN e1=expr TO e2=expr
+		  COLON seq_com DOT		  # for
+
+	|	SWITCH expr COLON
+		  ( CASE ( NUM
+		  		 | ( FALSE | TRUE )
+				 | (n1=NUM DOT DOT n2=NUM)
+			     )
+			COLON seq_com
+		  )*
+		  DEFAULT COLON seq_com
+		  DOT					  # switch
 	;
 
 seq_com
@@ -87,7 +100,7 @@ sec_expr
 	;
 
 prim_expr
-	:	FALSE                  # false        
+	:	FALSE                  # false
 	|	TRUE                   # true
 	|	NUM                    # num
 	|	ID                     # id
@@ -115,6 +128,11 @@ PROC	:	'proc' ;
 RETURN  :	'return' ;
 TRUE	:	'true' ;
 WHILE	:	'while' ;
+FOR		:	'for' ;
+TO		:	'to' ;
+SWITCH	:	'switch' ;
+CASE	:	'case' ;
+DEFAULT	:	'default' ;
 
 EQ      :	'==' ;
 LT      :	'<' ;
