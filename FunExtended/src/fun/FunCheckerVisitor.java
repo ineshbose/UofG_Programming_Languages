@@ -224,7 +224,7 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	    define(ctx.ID().getText(), functype, ctx);
 	    return null;
 	}
-    
+
     /**
 	 * Visit a parse tree produced by the {@code formalseq}
 	 * labeled alternative in {@link FunParser#formal_decl_seq}.
@@ -238,7 +238,7 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	return new Type.Sequence(types);
     }
 
-    
+
 	/**
 	 * Visit a parse tree produced by the {@code formal}
 	 * labeled alternative in {@link FunParser#formal_decl}.
@@ -343,6 +343,26 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	    Type t = visit(ctx.expr());
 	    visit(ctx.seq_com());
 	    checkType(Type.BOOL, t, ctx);
+	    return null;
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code for}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Type visitFor(FunParser.ForContext ctx) {
+	    return null;
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code switch}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Type visitSwitch(FunParser.SwitchContext ctx) {
 	    return null;
 	}
 
@@ -469,8 +489,6 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	    return visit(ctx.expr());
 	}
 
-        
-
     /**
 	 * Visit a parse tree produced by the {@code actualseq}
 	 * labeled alternative in {@link FunParser#actual_seq}.
@@ -483,6 +501,5 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 		types.add(visit(fc));
 	    return new Type.Sequence(types);
     }
-    
 
 }

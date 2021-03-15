@@ -97,6 +97,20 @@ public interface FunVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitWhile(FunParser.WhileContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code for}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFor(FunParser.ForContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code switch}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSwitch(FunParser.SwitchContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code seq}
 	 * labeled alternative in {@link FunParser#seq_com}.
 	 * @param ctx the parse tree
