@@ -71,7 +71,7 @@ com
 	|	FOR ID ASSN e1=expr TO e2=expr
 		  COLON seq_com DOT		  # for
 
-	|	SWITCH expr COLON
+	|	SWITCH ID COLON
 		  ( CASE ( NUM
 		  		 | ( FALSE | TRUE )
 				 | (n1=NUM DOT DOT n2=NUM)

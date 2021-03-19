@@ -357,8 +357,8 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	 * @return the visitor result
 	 */
 	public Type visitFor(FunParser.ForContext ctx) {
-	    define(ctx.ID().getText(), Type.INT, ctx);
-		Type t1 = visit(ctx.e1);
+		checkType(Type.INT, retrieve(ctx.ID().getText(), ctx), ctx);
+	    Type t1 = visit(ctx.e1);
 		Type t2 = visit(ctx.e2);
 		visit(ctx.seq_com());
 		checkType(Type.INT, t1, ctx);
@@ -373,46 +373,20 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	 * @return the visitor result
 	 */
 	public Type visitSwitch(FunParser.SwitchContext ctx) {
-		Type t = visit(ctx.expr());
-		Set<String> guards = new HashSet<String>();
-		for (TerminalNode c : ctx.CASE()) {
-			//Type caseType = visit(c);
-			//checkType(t, caseType, ctx);
-			if (ctx.FALSE().size() + ctx.TRUE().size() > 1 && ctx.NUM().size() > 1) {
-				reportError("Cases of different types!", ctx);
-			}
-			else {
-				if (ctx.FALSE().size() + ctx.TRUE().size() > 1) {
-					// Stream.concat(ctx.FALSE().stream(), ctx.TRUE().stream()).collect(Collectors.toList())
-					for (TerminalNode g : ctx.FALSE()) {
-						String guard = g.getText();
-						if (guards.contains(guard)) {
-							reportError("Case duplicated!", ctx);
-						}
-						else {
-							guards.add(guard);
-						}
-					}
-					for (TerminalNode g : ctx.TRUE()) {
-						String guard = g.getText();
-						if (guards.contains(guard)) {
-							reportError("Case duplicated!", ctx);
-						}
-						else {
-							guards.add(guard);
-						}
-					}
+		Set<TerminalNode> guards = new HashSet<TerminalNode>();
+
+		if (ctx.FALSE().size() + ctx.TRUE().size() > 0 && ctx.NUM().size() > 0) {
+			reportError("Cases of different types!", ctx);
+		}
+
+		else {
+			checkType((ctx.FALSE().size() + ctx.TRUE().size() > 0) ? Type.BOOL : Type.INT, retrieve(ctx.ID().getText(), ctx), ctx);
+			for (TerminalNode guard : (ctx.FALSE().size() + ctx.TRUE().size() > 0) ? Stream.concat(ctx.FALSE().stream(), ctx.TRUE().stream()).collect(Collectors.toList()) : ctx.NUM()) {
+				if (guards.contains(guard)) {
+					reportError("Case duplicated! %s".format(guard.getText()), ctx);
 				}
-				else if (ctx.NUM().size() > 1) {
-					for (TerminalNode g : ctx.NUM()) {
-						String guard = g.getText();
-						if (guards.contains(guard)) {
-							reportError("Case duplicated!", ctx);
-						}
-						else {
-							guards.add(guard);
-						}
-					}
+				else {
+					guards.add(guard);
 				}
 			}
 		}

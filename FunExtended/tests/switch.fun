@@ -31,6 +31,14 @@ proc main ():
     write(test(1))
     write(test(3))
     write(test(5))
-	write(invert(true))
-    write(invert(false))
+	if invert(true):
+        write(0)
+    else:
+        write(1)
+    .
+    if invert(false):
+        write(1)
+    else:
+        write(0)
+    .
 .

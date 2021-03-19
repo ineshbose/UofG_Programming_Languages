@@ -727,9 +727,7 @@ public class FunParser extends Parser {
 		public Token n1;
 		public Token n2;
 		public TerminalNode SWITCH() { return getToken(FunParser.SWITCH, 0); }
-		public ExprContext expr() {
-			return getRuleContext(ExprContext.class,0);
-		}
+		public TerminalNode ID() { return getToken(FunParser.ID, 0); }
 		public List<TerminalNode> COLON() { return getTokens(FunParser.COLON); }
 		public TerminalNode COLON(int i) {
 			return getToken(FunParser.COLON, i);
@@ -896,7 +894,7 @@ public class FunParser extends Parser {
 				setState(133);
 				match(SWITCH);
 				setState(134);
-				expr();
+				match(ID);
 				setState(135);
 				match(COLON);
 				setState(149);
@@ -1466,8 +1464,8 @@ public class FunParser extends Parser {
 		"\2\2|\u00a0\3\2\2\2}~\7\r\2\2~\177\7!\2\2\177\u0080\7\32\2\2\u0080\u0081"+
 		"\5\22\n\2\u0081\u0082\7\16\2\2\u0082\u0083\5\22\n\2\u0083\u0084\7\35\2"+
 		"\2\u0084\u0085\5\20\t\2\u0085\u0086\7\36\2\2\u0086\u00a0\3\2\2\2\u0087"+
-		"\u0088\7\17\2\2\u0088\u0089\5\22\n\2\u0089\u0097\7\35\2\2\u008a\u0091"+
-		"\7\20\2\2\u008b\u0092\7 \2\2\u008c\u0092\t\2\2\2\u008d\u008e\7 \2\2\u008e"+
+		"\u0088\7\17\2\2\u0088\u0089\7!\2\2\u0089\u0097\7\35\2\2\u008a\u0091\7"+
+		"\20\2\2\u008b\u0092\7 \2\2\u008c\u0092\t\2\2\2\u008d\u008e\7 \2\2\u008e"+
 		"\u008f\7\36\2\2\u008f\u0090\7\36\2\2\u0090\u0092\7 \2\2\u0091\u008b\3"+
 		"\2\2\2\u0091\u008c\3\2\2\2\u0091\u008d\3\2\2\2\u0092\u0093\3\2\2\2\u0093"+
 		"\u0094\7\35\2\2\u0094\u0096\5\20\t\2\u0095\u008a\3\2\2\2\u0096\u0099\3"+
