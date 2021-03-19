@@ -16,7 +16,11 @@ import org.antlr.v4.runtime.misc.*;
 import ast.*;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements FunVisitor<Type> {
 
@@ -353,6 +357,12 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	 * @return the visitor result
 	 */
 	public Type visitFor(FunParser.ForContext ctx) {
+	    define(ctx.ID().getText(), Type.INT, ctx);
+		Type t1 = visit(ctx.e1);
+		Type t2 = visit(ctx.e2);
+		visit(ctx.seq_com());
+		checkType(Type.INT, t1, ctx);
+		checkType(Type.INT, t2, ctx);
 	    return null;
 	}
 
@@ -363,6 +373,50 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	 * @return the visitor result
 	 */
 	public Type visitSwitch(FunParser.SwitchContext ctx) {
+		Type t = visit(ctx.expr());
+		Set<String> guards = new HashSet<String>();
+		for (TerminalNode c : ctx.CASE()) {
+			//Type caseType = visit(c);
+			//checkType(t, caseType, ctx);
+			if (ctx.FALSE().size() + ctx.TRUE().size() > 1 && ctx.NUM().size() > 1) {
+				reportError("Cases of different types!", ctx);
+			}
+			else {
+				if (ctx.FALSE().size() + ctx.TRUE().size() > 1) {
+					// Stream.concat(ctx.FALSE().stream(), ctx.TRUE().stream()).collect(Collectors.toList())
+					for (TerminalNode g : ctx.FALSE()) {
+						String guard = g.getText();
+						if (guards.contains(guard)) {
+							reportError("Case duplicated!", ctx);
+						}
+						else {
+							guards.add(guard);
+						}
+					}
+					for (TerminalNode g : ctx.TRUE()) {
+						String guard = g.getText();
+						if (guards.contains(guard)) {
+							reportError("Case duplicated!", ctx);
+						}
+						else {
+							guards.add(guard);
+						}
+					}
+				}
+				else if (ctx.NUM().size() > 1) {
+					for (TerminalNode g : ctx.NUM()) {
+						String guard = g.getText();
+						if (guards.contains(guard)) {
+							reportError("Case duplicated!", ctx);
+						}
+						else {
+							guards.add(guard);
+						}
+					}
+				}
+			}
+		}
+		visit(ctx.seq_com(ctx.seq_com().size() - 1));
 	    return null;
 	}
 
