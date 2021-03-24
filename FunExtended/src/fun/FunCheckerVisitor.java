@@ -19,7 +19,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 
 public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements FunVisitor<Type> {
@@ -373,25 +375,89 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	 * @return the visitor result
 	 */
 	public Type visitSwitch(FunParser.SwitchContext ctx) {
-		Set<TerminalNode> guards = new HashSet<TerminalNode>();
-
-		if (ctx.FALSE().size() + ctx.TRUE().size() > 0 && ctx.NUM().size() > 0) {
-			reportError("Cases of different types!", ctx);
-		}
-
-		else {
-			Type switchType = (ctx.NUM().size() > 0) ? Type.INT : Type.BOOL;
-			checkType(switchType, retrieve(ctx.ID().getText(), ctx), ctx);
-			for (TerminalNode guard : (switchType.equals(Type.BOOL)) ? Stream.concat(ctx.FALSE().stream(), ctx.TRUE().stream()).collect(Collectors.toList()) : ctx.NUM()) {
-				if (guards.contains(guard)) {
-					reportError("Case duplicated! %s".format(guard.getText()), ctx);
+		Type t = visit(ctx.expr());
+		Set<Boolean> bool_guards = new HashSet<Boolean>();
+		Set<HashSet<Integer>> num_guards = new HashSet<HashSet<Integer>>();
+		for (FunParser.ScaseContext c : ctx.scase()) {
+			visit(c);
+			Type tg = visit(c.guard());
+			checkType(t, tg, ctx);
+			String guard = c.guard().getText();
+			if (tg.equals(Type.BOOL)) {
+				Boolean b_guard = Boolean.parseBoolean(guard);
+				if (bool_guards.contains(b_guard)) {
+					reportError("Duplicated!", ctx);
 				}
 				else {
-					guards.add(guard);
+					bool_guards.add(b_guard);
+				}
+			}
+			else if (tg.equals(Type.INT)) {
+				HashSet<Integer> n_guard = new HashSet<Integer>();
+				if (guard.contains("..")) {
+					Integer n1 = Integer.parseInt(c.guard().n1.getText());
+					Integer n2 = Integer.parseInt(c.guard().n2.getText());
+					for (int i = n1; i<=n2; i++) {
+						n_guard.add(i);
+					}
+				}
+				else {
+					Integer n = Integer.parseInt(guard);
+					n_guard.add(n);
+				}
+				if (num_guards.contains(n_guard)) {
+					reportError("Duplicated!", ctx);
+				}
+				else {
+					Boolean disjoint = false;
+					for (Set<Integer> ng : num_guards) {
+						if (!Collections.disjoint(ng, n_guard)) {
+							reportError("Overlap!", ctx);
+							disjoint = true;
+							break;
+						}
+					}
+					if (!disjoint) {
+						// Replace with addAll for easier complexity
+						num_guards.add(n_guard);
+					}
 				}
 			}
 		}
-		visit(ctx.seq_com(ctx.seq_com().size() - 1));
+		visit(ctx.dcase());
+	    return null;
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code scase}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Type visitScase(FunParser.ScaseContext ctx) {
+		visit(ctx.guard());
+		visit(ctx.seq_com());
+		return null;
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code guard}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Type visitGuard(FunParser.GuardContext ctx) {
+		return (ctx.NUM().size() > 0) ? Type.INT : Type.BOOL;
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code dcase}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Type visitDcase(FunParser.DcaseContext ctx) {
+		visit(ctx.seq_com());
 	    return null;
 	}
 

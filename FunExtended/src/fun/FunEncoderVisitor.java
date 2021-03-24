@@ -13,6 +13,7 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 import org.antlr.v4.runtime.misc.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import ast.*;
@@ -309,24 +310,42 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	 */
 	public Void visitSwitch(FunParser.SwitchContext ctx) {
 		// Note: code template is in the report
-		String id = ctx.ID().getText();
-	    Address varaddr = addrTable.get(id);
-		Address jumpaddr = null;
-		if (ctx.NUM().size() > 0) {
-			for (int i=0; i<ctx.NUM().size(); i++){
-				visit(ctx.NUM(i));
-				Address caseaddr = obj.currentOffset();
-				obj.emit1(SVM.CMPEQ);
-			}
+		visit(ctx.expr());
+		Address caseLocations = new ArrayList<Address>();
+		for (FunParser.Scasecontext c : ctx.scase()) {
+			visit(c);
 		}
-		else {
-			for (int i=0; i<ctx.TRUE().size(); i++){
-				visit(ctx.TRUE(i));
-			}
-			for (int i=0; i<ctx.FALSE().size(); i++){
-				visit(ctx.FALSE(i));
-			}
-		}
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code scase}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Void visitScase(FunParser.ScaseContext ctx) {
+		return null;
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code guard}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Void visitGuard(FunParser.GuardContext ctx) {
+		return null;
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code dcase}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Void visitDcase(FunParser.SwitchContext ctx) {
+		visit(ctx.seq_com());
+		return null;
 	}
 
 	/**
