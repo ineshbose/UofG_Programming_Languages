@@ -376,52 +376,33 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	 */
 	public Type visitSwitch(FunParser.SwitchContext ctx) {
 		Type t = visit(ctx.expr());
-		Set<Boolean> bool_guards = new HashSet<Boolean>();
-		Set<HashSet<Integer>> num_guards = new HashSet<HashSet<Integer>>();
+		Set<String> guards = new HashSet<String>();
 		for (FunParser.ScaseContext c : ctx.scase()) {
 			visit(c);
 			Type tg = visit(c.guard());
 			checkType(t, tg, ctx);
 			String guard = c.guard().getText();
-			if (tg.equals(Type.BOOL)) {
-				Boolean b_guard = Boolean.parseBoolean(guard);
-				if (bool_guards.contains(b_guard)) {
-					reportError("Duplicated!", ctx);
+			Set<String> gtemp = new HashSet<String>();
+			if (tg.equals(Type.INT) && guard.contains("..")) {
+				Integer n1 = Integer.parseInt(c.guard().n1.getText());
+				Integer n2 = Integer.parseInt(c.guard().n2.getText());
+				if (n1 < n2) {
+					for (int i = n1; i<=n2; i++) {
+						gtemp.add(String.valueOf(i));
+					}
 				}
 				else {
-					bool_guards.add(b_guard);
+					reportError("Range not right.", ctx);
 				}
 			}
-			else if (tg.equals(Type.INT)) {
-				HashSet<Integer> n_guard = new HashSet<Integer>();
-				if (guard.contains("..")) {
-					Integer n1 = Integer.parseInt(c.guard().n1.getText());
-					Integer n2 = Integer.parseInt(c.guard().n2.getText());
-					for (int i = n1; i<=n2; i++) {
-						n_guard.add(i);
-					}
-				}
-				else {
-					Integer n = Integer.parseInt(guard);
-					n_guard.add(n);
-				}
-				if (num_guards.contains(n_guard)) {
-					reportError("Duplicated!", ctx);
-				}
-				else {
-					Boolean disjoint = false;
-					for (Set<Integer> ng : num_guards) {
-						if (!Collections.disjoint(ng, n_guard)) {
-							reportError("Overlap!", ctx);
-							disjoint = true;
-							break;
-						}
-					}
-					if (!disjoint) {
-						// Replace with addAll for easier complexity
-						num_guards.add(n_guard);
-					}
-				}
+			else {
+				gtemp.add(guard);
+			}
+			if (Collections.disjoint(guards, gtemp)) {
+				guards.addAll(gtemp);
+			}
+			else {
+				reportError("Guard duplicated or overlapped!", ctx);
 			}
 		}
 		visit(ctx.dcase());
