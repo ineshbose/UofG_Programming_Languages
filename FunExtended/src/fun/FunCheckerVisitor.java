@@ -380,8 +380,9 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 		}
 
 		else {
-			checkType((ctx.FALSE().size() + ctx.TRUE().size() > 0) ? Type.BOOL : Type.INT, retrieve(ctx.ID().getText(), ctx), ctx);
-			for (TerminalNode guard : (ctx.FALSE().size() + ctx.TRUE().size() > 0) ? Stream.concat(ctx.FALSE().stream(), ctx.TRUE().stream()).collect(Collectors.toList()) : ctx.NUM()) {
+			Type switchType = (ctx.NUM().size() > 0) ? Type.INT : Type.BOOL;
+			checkType(switchType, retrieve(ctx.ID().getText(), ctx), ctx);
+			for (TerminalNode guard : (switchType.equals(Type.BOOL)) ? Stream.concat(ctx.FALSE().stream(), ctx.TRUE().stream()).collect(Collectors.toList()) : ctx.NUM()) {
 				if (guards.contains(guard)) {
 					reportError("Case duplicated! %s".format(guard.getText()), ctx);
 				}

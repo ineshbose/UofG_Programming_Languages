@@ -9,6 +9,8 @@ func int test (int n):
             s = 2
         case 2..4:
             s = 3
+        case 5..8:
+            s = 4
         default:
             r = 4
     .

@@ -267,6 +267,69 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	}
 
 	/**
+	 * Visit a parse tree produced by the {@code for}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Void visitFor(FunParser.ForContext ctx) {
+		// Note: code template is in the report
+		String id = ctx.ID().getText();
+	    Address varaddr = addrTable.get(id);
+		byte load = 0, store = 1;
+		switch (varaddr.locale) {
+		case Address.GLOBAL:
+		load = SVM.LOADG; store = SVM.STOREG;
+		break;
+		case Address.LOCAL:
+		load = SVM.LOADL; store = SVM.STOREL;
+		}
+		visit(ctx.e1);
+		obj.emit12(store, varaddr.offset);
+		int startaddr = obj.currentOffset();
+		obj.emit12(load, varaddr.offset);
+		visit(ctx.e2);
+		obj.emit1(SVM.CMPLT);
+		int condaddr = obj.currentOffset();
+		obj.emit12(SVM.JUMPF, 0);
+		visit(ctx.seq_com());
+		obj.emit12(load, varaddr.offset);
+		obj.emit1(SVM.INC);
+		obj.emit12(store, varaddr.offset);
+		obj.emit12(SVM.JUMP, startaddr);
+		obj.patch12(condaddr, obj.currentOffset());
+		return null;
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code switch}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Void visitSwitch(FunParser.SwitchContext ctx) {
+		// Note: code template is in the report
+		String id = ctx.ID().getText();
+	    Address varaddr = addrTable.get(id);
+		Address jumpaddr = null;
+		if (ctx.NUM().size() > 0) {
+			for (int i=0; i<ctx.NUM().size(); i++){
+				visit(ctx.NUM(i));
+				Address caseaddr = obj.currentOffset();
+				obj.emit1(SVM.CMPEQ);
+			}
+		}
+		else {
+			for (int i=0; i<ctx.TRUE().size(); i++){
+				visit(ctx.TRUE(i));
+			}
+			for (int i=0; i<ctx.FALSE().size(); i++){
+				visit(ctx.FALSE(i));
+			}
+		}
+	}
+
+	/**
 	 * Visit a parse tree produced by the {@code seq}
 	 * labeled alternative in {@link FunParser#seq_com}.
 	 * @param ctx the parse tree
@@ -406,7 +469,7 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	 */
 	public Void visitNot(FunParser.NotContext ctx) {
 	    visit(ctx.prim_expr());
-	    obj.emit1(SVM.INV); 
+	    obj.emit1(SVM.INV);
 	    return null;
 	}
 
@@ -428,12 +491,10 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-    
 	public Void visitActualseq(FunParser.ActualseqContext ctx) {
 	    for (FunParser.ExprContext fc : ctx.expr())
 		visit(fc);
 	    return null;
     }
-    
 
 }
