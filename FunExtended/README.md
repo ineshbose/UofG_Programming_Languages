@@ -11,6 +11,21 @@ Each extension consists of three stages:
 
 Start from the version of Fun that has been extended with multiple parameters (familiarisation exercise) and set up a new project called **FunExtended** and start by importing or copying the files. **Maintain the same structure of directory.**
 
+## Instructions
+```sh
+# Generate lexer with defined grammar
+$ java -jar antlr.jar -no-listener -visitor -o src/ast src/ast/Fun.g4
+
+# Compile FunCheck for Contextual Analysis
+$ javac -cp "antlr.jar" -d bin/ -sourcepath src/ src/fun/FunCheck.java
+$ java -cp "antlr.jar;bin" fun/FunCheck tests/switch1.fun
+
+# Compile FunRun for Code Generation
+$ javac -cp "antlr.jar" -d bin/ -sourcepath src/ src/fun/SVM.java
+$ javac -cp "antlr.jar" -d bin/ -sourcepath src/ src/fun/FunRun.java
+$ java -cp "antlr.jar;bin" fun/FunRun tests/switch1.fun
+```
+
 ### Extension A: the _for-command_
 
 The following Fun function contains a for-command:

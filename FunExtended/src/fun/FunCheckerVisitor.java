@@ -378,32 +378,26 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 		Type t = visit(ctx.expr());
 		Set<String> guards = new HashSet<String>();
 		for (FunParser.ScaseContext c : ctx.scase()) {
-			visit(c);
-			Type tg = visit(c.guard());
-			checkType(t, tg, ctx);
-			String guard = c.guard().getText();
-			Set<String> gtemp = new HashSet<String>();
-			if (tg.equals(Type.INT) && guard.contains("..")) {
-				Integer n1 = Integer.parseInt(c.guard().n1.getText());
-				Integer n2 = Integer.parseInt(c.guard().n2.getText());
-				if (n1 < n2) {
-					for (int i = n1; i<=n2; i++) {
-						gtemp.add(String.valueOf(i));
-					}
-				}
-				else {
-					reportError("Range not right.", ctx);
-				}
-			}
-			else {
-				gtemp.add(guard);
-			}
-			if (Collections.disjoint(guards, gtemp)) {
-				guards.addAll(gtemp);
-			}
-			else {
-				reportError("Guard duplicated or overlapped!", ctx);
-			}
+		visit(c);
+		Type tg = visit(c.guard());
+		checkType(t, tg, ctx);
+		String guard = c.guard().getText();
+		Set<String> gtemp = new HashSet<String>();
+		if (tg.equals(Type.INT) && guard.contains("..")) {
+		Integer n1 = Integer.parseInt(c.guard().n1.getText());
+		Integer n2 = Integer.parseInt(c.guard().n2.getText());
+		if (n1 < n2)
+		for (int i = n1; i<=n2; i++)
+		gtemp.add(String.valueOf(i));
+		else
+		reportError("Range not right.", ctx);
+		}
+		else
+		gtemp.add(guard);
+		if (Collections.disjoint(guards, gtemp))
+		guards.addAll(gtemp);
+		else
+		reportError("Guard duplicated or overlapped!", ctx);
 		}
 		visit(ctx.dcase());
 	    return null;

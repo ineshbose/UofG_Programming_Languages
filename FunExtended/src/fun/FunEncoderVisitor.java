@@ -274,9 +274,6 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	 * @return the visitor result
 	 */
 	public Void visitFor(FunParser.ForContext ctx) {
-		/**
-		 * [Code Template]
-		 */
 		String id = ctx.ID().getText();
 	    Address varaddr = addrTable.get(id);
 		byte load = 0, store = 1;
@@ -311,27 +308,23 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	 * @return the visitor result
 	 */
 	public Void visitSwitch(FunParser.SwitchContext ctx) {
-		/**
-		 * [Code Template]
-		 */
 		List<Integer> casesaddr = new ArrayList<Integer>();
 		for (FunParser.ScaseContext c : ctx.scase()) {
-			visit(ctx.expr());
-			visit(c.guard());
-			int jumpaddr = obj.currentOffset();
-			obj.emit12(SVM.JUMPF, 0);
-			visit(c);
-			int endaddr = obj.currentOffset();
-			casesaddr.add(endaddr);
-			obj.emit12(SVM.JUMP, 0);
-			int nextaddr = obj.currentOffset();
-			obj.patch12(jumpaddr, nextaddr);
+		visit(ctx.expr());
+		visit(c.guard());
+		int jumpaddr = obj.currentOffset();
+		obj.emit12(SVM.JUMPF, 0);
+		visit(c);
+		int endaddr = obj.currentOffset();
+		casesaddr.add(endaddr);
+		obj.emit12(SVM.JUMP, 0);
+		int nextaddr = obj.currentOffset();
+		obj.patch12(jumpaddr, nextaddr);
 		}
 		visit(ctx.dcase());
 		int exitaddr = obj.currentOffset();
-		for (Integer addr : casesaddr) {
-			obj.patch12(addr, exitaddr);
-		}
+		for (Integer addr : casesaddr)
+		obj.patch12(addr, exitaddr);
 		return null;
 	}
 
@@ -353,18 +346,18 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	 * @return the visitor result
 	 */
 	public Void visitGuard(FunParser.GuardContext ctx) {
-		if (ctx.DOT().size() > 0){
-			obj.emit12(SVM.LOADC, Integer.parseInt(ctx.n1.getText()));
-			obj.emit12(SVM.LOADC, Integer.parseInt(ctx.n2.getText()));
-			obj.emit1(SVM.CMPIN);
+		if (ctx.DOT().size() > 0) {
+		obj.emit12(SVM.LOADC, Integer.parseInt(ctx.n1.getText()));
+		obj.emit12(SVM.LOADC, Integer.parseInt(ctx.n2.getText()));
+		obj.emit1(SVM.CMPIN);
 		}
 		else if (ctx.NUM().size() > 0) {
-			obj.emit12(SVM.LOADC, Integer.parseInt(ctx.NUM(0).getText()));
-			obj.emit1(SVM.CMPEQ);
+		obj.emit12(SVM.LOADC, Integer.parseInt(ctx.NUM(0).getText()));
+		obj.emit1(SVM.CMPEQ);
 		}
 		else {
-			obj.emit12(SVM.LOADC, (ctx.TRUE() != null) ? 1 : 0);
-			obj.emit1(SVM.CMPEQ);
+		obj.emit12(SVM.LOADC, (ctx.TRUE() != null) ? 1 : 0);
+		obj.emit1(SVM.CMPEQ);
 		}
 		return null;
 	}
