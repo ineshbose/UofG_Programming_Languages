@@ -77,7 +77,7 @@ public class SVM {
 	   LOADC   =  4,
 	   ADD     =  6,  SUB     =  7,
 	   MUL     =  8,  DIV     =  9,
-	   CMPEQ   = 10,
+	   CMPEQ   = 10,  CMPIN	  = 11,
 	   CMPLT   = 12,  CMPGT   = 13,
 	   INV     = 14,  INC     = 15,
 	   HALT    = 16,  JUMP    = 17,
@@ -91,7 +91,7 @@ public class SVM {
 	   "LOADC   ",    "???     ",
 	   "ADD     ",    "SUB     ",
 	   "MUL     ",    "DIV     ",
-	   "CMPEQ   ",    "???     ",
+	   "CMPEQ   ",    "CMPIN   ",
 	   "CMPLT   ",    "CMPGT   ",
 	   "INV     ",    "INC     ",
 	   "HALT    ",    "JUMP    ",
@@ -228,6 +228,16 @@ public class SVM {
 					int w2 = data[--sp];
 					int w1 = data[--sp];
 					data[sp++] = (w1 == w2 ? 1 : 0);
+					break;
+				}
+				case CMPIN: {
+					int w3 = data[--sp];
+					int w2 = data[--sp];
+					int w1 = data[--sp];
+					Set<Integer> range = new HashSet<Integer>();
+					for (int i=w2; i<=w3; i++)
+						range.add(i);
+					data[sp++] = (range.contains(w1) ? 1 : 0);
 					break;
 				}
 				case CMPLT: {

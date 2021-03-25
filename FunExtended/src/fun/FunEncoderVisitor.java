@@ -13,6 +13,7 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 import org.antlr.v4.runtime.misc.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import ast.*;
@@ -273,7 +274,6 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	 * @return the visitor result
 	 */
 	public Void visitFor(FunParser.ForContext ctx) {
-		// Note: code template is in the report
 		String id = ctx.ID().getText();
 	    Address varaddr = addrTable.get(id);
 		byte load = 0, store = 1;
@@ -289,9 +289,9 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 		int startaddr = obj.currentOffset();
 		obj.emit12(load, varaddr.offset);
 		visit(ctx.e2);
-		obj.emit1(SVM.CMPLT);
+		obj.emit1(SVM.CMPGT);
 		int condaddr = obj.currentOffset();
-		obj.emit12(SVM.JUMPF, 0);
+		obj.emit12(SVM.JUMPT, 0);
 		visit(ctx.seq_com());
 		obj.emit12(load, varaddr.offset);
 		obj.emit1(SVM.INC);
@@ -308,25 +308,69 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 	 * @return the visitor result
 	 */
 	public Void visitSwitch(FunParser.SwitchContext ctx) {
-		// Note: code template is in the report
-		String id = ctx.ID().getText();
-	    Address varaddr = addrTable.get(id);
-		Address jumpaddr = null;
-		if (ctx.NUM().size() > 0) {
-			for (int i=0; i<ctx.NUM().size(); i++){
-				visit(ctx.NUM(i));
-				Address caseaddr = obj.currentOffset();
-				obj.emit1(SVM.CMPEQ);
-			}
+		List<Integer> casesaddr = new ArrayList<Integer>();
+		for (FunParser.ScaseContext c : ctx.scase()) {
+		visit(ctx.expr());
+		visit(c.guard());
+		int jumpaddr = obj.currentOffset();
+		obj.emit12(SVM.JUMPF, 0);
+		visit(c);
+		int endaddr = obj.currentOffset();
+		casesaddr.add(endaddr);
+		obj.emit12(SVM.JUMP, 0);
+		int nextaddr = obj.currentOffset();
+		obj.patch12(jumpaddr, nextaddr);
+		}
+		visit(ctx.dcase());
+		int exitaddr = obj.currentOffset();
+		for (Integer addr : casesaddr)
+		obj.patch12(addr, exitaddr);
+		return null;
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code scase}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Void visitScase(FunParser.ScaseContext ctx) {
+		visit(ctx.seq_com());
+		return null;
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code guard}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Void visitGuard(FunParser.GuardContext ctx) {
+		if (ctx.DOT().size() > 0) {
+		obj.emit12(SVM.LOADC, Integer.parseInt(ctx.n1.getText()));
+		obj.emit12(SVM.LOADC, Integer.parseInt(ctx.n2.getText()));
+		obj.emit1(SVM.CMPIN);
+		}
+		else if (ctx.NUM().size() > 0) {
+		obj.emit12(SVM.LOADC, Integer.parseInt(ctx.NUM(0).getText()));
+		obj.emit1(SVM.CMPEQ);
 		}
 		else {
-			for (int i=0; i<ctx.TRUE().size(); i++){
-				visit(ctx.TRUE(i));
-			}
-			for (int i=0; i<ctx.FALSE().size(); i++){
-				visit(ctx.FALSE(i));
-			}
+		obj.emit12(SVM.LOADC, (ctx.TRUE() != null) ? 1 : 0);
+		obj.emit1(SVM.CMPEQ);
 		}
+		return null;
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code dcase}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Void visitDcase(FunParser.DcaseContext ctx) {
+		visit(ctx.seq_com());
+		return null;
 	}
 
 	/**

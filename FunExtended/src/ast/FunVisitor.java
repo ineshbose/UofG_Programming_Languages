@@ -118,6 +118,24 @@ public interface FunVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitSeq(FunParser.SeqContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link FunParser#scase}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitScase(FunParser.ScaseContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link FunParser#dcase}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitDcase(FunParser.DcaseContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link FunParser#guard}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitGuard(FunParser.GuardContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link FunParser#expr}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

@@ -71,21 +71,30 @@ com
 	|	FOR ID ASSN e1=expr TO e2=expr
 		  COLON seq_com DOT		  # for
 
-	|	SWITCH ID COLON
-		  ( CASE ( NUM
-		  		 | ( FALSE | TRUE )
-				 | (n1=NUM DOT DOT n2=NUM)
-			     )
-			COLON seq_com
-		  )*
-		  DEFAULT COLON seq_com
-		  DOT					  # switch
+	|	SWITCH expr COLON
+		  scase*
+		  dcase DOT			      # switch
 	;
 
 seq_com
 	:	com*                      # seq
 	;
 
+scase
+	:	CASE guard
+		COLON seq_com
+	;
+
+dcase
+	:	DEFAULT COLON seq_com
+	;
+
+guard
+	:	( NUM
+		| ( FALSE | TRUE )
+		| (n1=NUM DOT DOT n2=NUM)
+		)
+	;
 
 //////// Expressions
 

@@ -9,6 +9,10 @@ func int test (int n):
             s = 2
         case 2..4:
             s = 3
+        case 3:
+            s = 2
+        case 7:
+            s = 5
         case 5..8:
             s = 4
         default:
@@ -18,29 +22,8 @@ func int test (int n):
     return r
 .
 
-func bool invert (bool b):
-    bool x = false
-    switch b:
-        case true:
-            x = false
-        default:
-            x = true
-    .
-    return x
-.
-
 proc main ():
     write(test(1))
     write(test(3))
     write(test(5))
-	if invert(true):
-        write(0)
-    else:
-        write(1)
-    .
-    if invert(false):
-        write(1)
-    else:
-        write(0)
-    .
 .

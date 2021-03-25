@@ -19,7 +19,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 
 public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements FunVisitor<Type> {
@@ -373,25 +375,64 @@ public class FunCheckerVisitor extends AbstractParseTreeVisitor<Type> implements
 	 * @return the visitor result
 	 */
 	public Type visitSwitch(FunParser.SwitchContext ctx) {
-		Set<TerminalNode> guards = new HashSet<TerminalNode>();
-
-		if (ctx.FALSE().size() + ctx.TRUE().size() > 0 && ctx.NUM().size() > 0) {
-			reportError("Cases of different types!", ctx);
+		Type t = visit(ctx.expr());
+		Set<String> guards = new HashSet<String>();
+		for (FunParser.ScaseContext c : ctx.scase()) {
+		visit(c);
+		Type tg = visit(c.guard());
+		checkType(t, tg, ctx);
+		String guard = c.guard().getText();
+		Set<String> gtemp = new HashSet<String>();
+		if (tg.equals(Type.INT) && guard.contains("..")) {
+		Integer n1 = Integer.parseInt(c.guard().n1.getText());
+		Integer n2 = Integer.parseInt(c.guard().n2.getText());
+		if (n1 < n2)
+		for (int i = n1; i<=n2; i++)
+		gtemp.add(String.valueOf(i));
+		else
+		reportError("Range not right.", ctx);
 		}
-
-		else {
-			Type switchType = (ctx.NUM().size() > 0) ? Type.INT : Type.BOOL;
-			checkType(switchType, retrieve(ctx.ID().getText(), ctx), ctx);
-			for (TerminalNode guard : (switchType.equals(Type.BOOL)) ? Stream.concat(ctx.FALSE().stream(), ctx.TRUE().stream()).collect(Collectors.toList()) : ctx.NUM()) {
-				if (guards.contains(guard)) {
-					reportError("Case duplicated! %s".format(guard.getText()), ctx);
-				}
-				else {
-					guards.add(guard);
-				}
-			}
+		else
+		gtemp.add(guard);
+		if (Collections.disjoint(guards, gtemp))
+		guards.addAll(gtemp);
+		else
+		reportError("Guard duplicated or overlapped!", ctx);
 		}
-		visit(ctx.seq_com(ctx.seq_com().size() - 1));
+		visit(ctx.dcase());
+	    return null;
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code scase}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Type visitScase(FunParser.ScaseContext ctx) {
+		visit(ctx.guard());
+		visit(ctx.seq_com());
+		return null;
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code guard}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Type visitGuard(FunParser.GuardContext ctx) {
+		return (ctx.NUM().size() > 0) ? Type.INT : Type.BOOL;
+	}
+
+	/**
+	 * Visit a parse tree produced by the {@code dcase}
+	 * labeled alternative in {@link FunParser#com}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	public Type visitDcase(FunParser.DcaseContext ctx) {
+		visit(ctx.seq_com());
 	    return null;
 	}
 

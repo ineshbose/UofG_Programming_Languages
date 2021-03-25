@@ -1,0 +1,593 @@
+% Programming Languages (H) CW Report written in LaTeX by Inesh Bose
+
+\documentclass{article}
+
+
+%==============================================================================
+%% Packages and Command Setting
+\usepackage[utf8]{inputenc}
+\setcounter{secnumdepth}{0}
+\usepackage[shortlabels]{enumitem}
+\usepackage{layout}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{minted}
+\usepackage{caption}
+\usemintedstyle{friendly}
+\newcommand{\code}[1]{\texttt{#1}}
+\newenvironment{codelst}{\captionsetup{type=listing}}{}
+
+
+%=====================================
+%% Options to Show/Hide Sections
+%% Since page limit is 4, this is advantageous
+%% Content formatting has been kept in mind
+
+\newcommand{\showtoc}{0}
+\newcommand{\showinstructions}{1}
+\newcommand{\showdetails}{1}
+\newcommand{\dividestages}{0}
+\newcommand{\showcontextcode}{1}
+\newcommand{\showtemplate}{0}
+\newcommand{\showobjectcode}{0}
+\newcommand{\showencodecode}{1}
+
+
+%=====================================
+%% Extra Commands for Customisation
+
+\newcommand{\npage}{
+    \if\dividestages1
+        \newpage
+    \fi
+}
+\newcommand{\stage}[1]{
+    \if\dividestages1
+        \vspace{0.5cm}
+        \subsection{#1}
+    \fi
+}
+\newcommand{\act}[1]{
+    \if\dividestages1
+        \subsubsection{#1}
+    \fi
+}
+\newcommand{\codecaption}[1]{
+    \if\dividestages0
+        \vspace{-0.75cm}
+        \caption{\textbf{#1}}
+        \vspace{0.4cm}
+    \fi
+}
+
+
+%==============================================================================
+%% Title Page
+
+\title{Programming Languages (H)\\Coursework Status Report}
+\author{\bf Inesh Bose}
+\date{}
+
+\begin{document}
+
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
+
+\maketitle
+
+\if\showtoc1
+
+    \vspace{2cm}
+
+    \if\dividestages0
+        \vspace{2cm}
+    \fi
+
+    \tableofcontents
+    \addtocontents{toc}{\protect\thispagestyle{empty}}
+
+\fi
+
+\pagenumbering{gobble}
+
+
+%==============================================================================
+%% Status
+
+\if\showtoc1
+
+\newpage
+
+\begin{codelst}
+\begin{minted}[bgcolor=bg]{text}
+//////////////////////////////////////////////////////////////
+//
+// Fun Compiler
+//
+// Based on a previous version developed by
+// David Watt and Simon Gay (University of Glasgow).
+//
+// Extended by Inesh Bose
+//
+//////////////////////////////////////////////////////////////
+\end{minted}
+\end{codelst}
+
+\fi
+
+\vspace{0.5cm}
+
+\section{Status}
+
+\noindent The coursework has been completed and tested successfully. The Fun compiler has been extended with a \code{for} command and a \code{switch} command. The directory organisation is maintained, and the code is strictly in the same format as the rest of the files. A few personal programming style preferences are reflected such naming variables and avoiding excessive commenting.
+
+\if\showinstructions1
+
+\vspace{0.5cm}
+
+\if\showtoc1
+\vspace{0.5cm}
+\fi
+
+\begin{codelst}
+\begin{minted}[tabsize=5,bgcolor=bg,fontsize=\footnotesize]{bash}
+# Generate lexer with defined grammar
+> java -jar antlr.jar -no-listener -visitor -o src/ast src/ast/Fun.g4
+
+# Compile FunCheck for Contextual Analysis
+> javac -cp "antlr.jar" -d bin/ -sourcepath src/ src/fun/FunCheck.java
+> java -cp "antlr.jar;bin" fun/FunCheck tests/switch1.fun
+
+# Compile FunRun for Code Generation
+> javac -cp "antlr.jar" -d bin/ -sourcepath src/ src/fun/SVM.java
+> javac -cp "antlr.jar" -d bin/ -sourcepath src/ src/fun/FunRun.java
+> java -cp "antlr.jar;bin" fun/FunRun tests/switch1.fun
+\end{minted}
+\codecaption{How-to-Run Instructions}
+\end{codelst}
+
+\fi
+
+\vspace{0.5cm}
+
+\noindent The \code{zip} file includes all files (including unchanged) and \code{antlr.jar} in the \code{FunExtended/} directory that is in the same level as this report \code{StatusReport}. Be sure to \code{cd} into the directory.
+
+
+%==============================================================================
+%% For Command
+
+\npage
+
+\section{\textit{\code{for} command}}
+
+\noindent The \code{for} command was easily implemented and did not require \textit{"out-of-the-way"} changes. The syntax was defined, and visitors were simply overridden.
+
+\if\showdetails1
+
+%=====================================
+%% For Command : Syntactical Analysis
+
+\stage{Syntactical Analysis}
+
+\noindent To define the grammar for the \code{for} command, the \code{com} token (that defines a command) was extended. Only \code{FOR} and \code{TO} were added to the lexicons.
+
+\begin{codelst}
+\begin{minted}[tabsize=5,bgcolor=bg]{text}
+com
+    :   ....
+    |   FOR ID ASSN e1=expr TO e2=expr
+          COLON seq_com DOT		  # for
+    |   ....
+    ;
+\end{minted}
+\codecaption{Syntax defined in \code{Fun.g4}}
+\end{codelst}
+
+
+%=====================================
+%% For Command : Contextual Analysis
+
+\stage{Contextual Analysis}
+
+\noindent The scope/type rules for a \code{for} command requires the \code{ID} to be already declared and of type \code{int} (so \code{e1} and \code{e2} are also \code{int}).
+
+\if\showcontextcode1
+
+\begin{codelst}
+\begin{minted}[tabsize=5,bgcolor=bg]{java}
+public Type visitFor(FunParser.ForContext ctx) {
+	checkType(Type.INT, retrieve(ctx.ID().getText(), ctx), ctx);
+	Type t1 = visit(ctx.e1);
+	Type t2 = visit(ctx.e2);
+	visit(ctx.seq_com());
+	checkType(Type.INT, t1, ctx);
+	checkType(Type.INT, t2, ctx);
+	return null;
+}
+\end{minted}
+\codecaption{\code{FunCheckerVisitor.java}}
+\end{codelst}
+
+\npage
+
+\fi
+
+%=====================================
+%% For Command : Code Generation
+
+\stage{Code Generation}
+
+\noindent A \textit{for-loop} is similar to a \textit{while-loop}, therefore \code{visitWhile} was used as reference. The difference is that \code{ID} will be assigned a value at the start and is incremented at the end using \code{SVM.INC}.
+
+\act{Code Template}
+
+\vspace{0.5cm}
+
+\noindent The template shares how the first \code{expr} is evaluated and stored into \code{ID}, then noting address before the second \code{expr} to evaluate condition.
+
+\if\showtemplate1
+
+\vspace{0.5cm}
+
+\begin{codelst}
+\begin{minted}[escapeinside=||,tabsize=5,bgcolor=bg]{text}
+1. walk |\textit{expr}|, generating code;
+2. lookup |\textbf{ID}| and retrieve its address |\textit{d}|;
+3. emit instruction "STOREG/STOREL |\textit{d}|" depending on scope;
+4. note the current instruction address |\textit{c1}|;
+5. walk |\textit{expr}|, generating code;
+6. emit "JUMPT 0" (after CMPGT);
+7. walk |\textit{com}|, generating code;
+8. increment stored value at |\textit{d}|;
+9. emit "JUMP c1";
+\end{minted}
+\codecaption{Code Template}
+\end{codelst}
+
+\if\showobjectcode1
+
+\noindent The object code then shows a set of corresponding instructions.
+
+\begin{codelst}
+\begin{minted}[tabsize=5,bgcolor=bg]{text}
+ 7: LOADC   e1
+10: STOREG  ID
+13: LOADG   ID
+16: LOADC   e2
+19: CMPLT
+20: JUMPF   39
+23: LOADG   ID
+26: CALL    40
+29: LOADG   ID
+32: INC
+33: STOREG  ID
+36: JUMP    13
+39: RETURN  0
+\end{minted}
+\codecaption{Object Code}
+\end{codelst}
+
+\npage
+
+\fi
+
+\fi
+
+\act{Encoder}
+
+\vspace{0.5cm}
+
+\noindent The code generator / encoder then uses this idea and implements it in \code{visitFor}. After getting the address and scope using \code{locale} of the \code{ID}, the \code{expr}s are evaluated and jumps are handled accordingly.
+
+\if\showencodecode1
+
+\vspace{0.5cm}
+
+\begin{codelst}
+\begin{minted}[tabsize=5,bgcolor=bg]{java}
+visit(ctx.e1);
+obj.emit12(store, varaddr.offset);
+int startaddr = obj.currentOffset();
+obj.emit12(load, varaddr.offset);
+visit(ctx.e2);
+obj.emit1(SVM.CMPGT);
+int condaddr = obj.currentOffset();
+obj.emit12(SVM.JUMPT, 0);
+visit(ctx.seq_com());
+obj.emit12(load, varaddr.offset);
+obj.emit1(SVM.INC);
+obj.emit12(store, varaddr.offset);
+obj.emit12(SVM.JUMP, startaddr);
+obj.patch12(condaddr, obj.currentOffset());
+\end{minted}
+\codecaption{\code{FunEncoderVisitor.java}}
+\end{codelst}
+
+\fi
+
+%=====================================
+%% For Command : Tests
+
+\stage{Tests}
+
+\noindent \code{for1.fun} includes a very simple \textit{for-loop} inside \code{main} that is expected to write the value of \code{i} (\code{2 to 5}) at every loop. \code{for2.fun} expects to print factorial value (\code{of 5}) using the \textit{for-loop}.
+
+\fi
+
+
+%==============================================================================
+
+
+\if\showdetails0
+\vspace{4cm}
+\fi
+
+
+%==============================================================================
+%% Switch Command
+
+\vspace{0.5cm}
+
+\if\showobjectcode1
+\npage
+\fi
+
+\section{\textit{\code{switch} command}}
+
+\noindent Extending the Fun compiler with the \code{switch} command required more changes. The required lexicons were \code{SWITCH}, \code{CASE} and \code{DEFAULT}. An early approach to define the syntax was to put it all under one Backus-Naur Form expression.
+
+\if\showdetails1
+
+%=====================================
+%% Switch Command : Syntactical Analysis
+
+\stage{Syntactical Analysis}
+
+\begin{codelst}
+\begin{minted}[tabsize=5,bgcolor=bg]{text}
+com
+    :   ....
+    |   SWITCH ID COLON
+          ( CASE ( NUM
+                 | ( FALSE | TRUE )
+                 | (n1=NUM DOT DOT n2=NUM)
+                 )
+            COLON seq_com
+          )*
+          DEFAULT COLON seq_com
+          DOT					  # switch
+    |   ....
+    ;
+\end{minted}
+\codecaption{Early version of syntax defined in \code{Fun.g4}}
+\end{codelst}
+
+\vspace{0.2cm}
+
+\noindent This, however, caused inconvenience and unnecessary complexities during the later stages. Hence, the grammar was broken down into \code{scase} (standard case), \code{dcase} (default case) and \code{guard} tokens.
+
+
+\begin{codelst}
+\begin{minted}[tabsize=5,bgcolor=bg]{text}
+com
+    :   ....
+    |   SWITCH expr COLON
+          scase*
+          dcase DOT			      # switch
+    |   ....
+    ;
+
+scase
+    :   CASE guard
+          COLON seq_com
+    ;
+
+dcase
+    :   DEFAULT COLON seq_com
+    ;
+
+guard
+    :   ( NUM
+        | ( FALSE | TRUE )
+        | (n1=NUM DOT DOT n2=NUM)
+        )
+    ;
+\end{minted}
+\codecaption{Syntax broken into separate tokens in \code{Fun.g4}}
+\end{codelst}
+
+%=====================================
+%% Switch Command : Contextual Analysis
+
+\stage{Contextual Analysis}
+
+\noindent Majority of contextual analysis happened in \code{visitSwitch}. The \code{expr} had to be of the same type as the guards, and the guards had to be unique and not overlapping (in the case of ranges); this was done by storing the guards as strings in a set. This set was populated with a temporary set created for each guard; this way, a range could be represented as a set of numbers going from \code{n1} to \code{n2}. So now, if there was an intersect between the set was being added and the set of all guards, there will be an error. This appeared to be a clean and efficient way to check duplicates/overlap two-way.
+
+\vspace{0.5cm}
+
+\begin{codelst}
+% Shown irrespective of \showcontextcode as this is important and good to show
+\begin{minted}[tabsize=5,bgcolor=bg]{java}
+if (Collections.disjoint(guards, gtemp)) {
+	guards.addAll(gtemp);
+}
+else {
+	reportError("Guard duplicated or overlapped!", ctx);
+}
+\end{minted}
+\codecaption{\code{FunCheckerVisitor.java}}
+\end{codelst}
+
+%=====================================
+%% Switch Command : Code Generation
+
+\stage{Code Generation}
+
+\noindent A \code{switch-command} can be seen similar to \code{if-statements} that only work with \code{==}. The catch is that unlike \code{if-else}, the number of cases is unknown.
+
+\vspace{1cm}
+
+\act{Code Template}
+
+\noindent The template would repeat itself while walking over every case hence the template is structured accordingly and instructions are written as sub-lists.
+
+\if\showtemplate1
+
+\vspace{0.5cm}
+
+\begin{codelst}
+\begin{minted}[escapeinside=||,tabsize=5,bgcolor=bg]{text}
+1. for every case,
+	1. walk |\textit{expr}|, generating code;
+	2. walk |\textit{guard}|, generating code;
+	3. note the current instruction address |\textit{c1}|;
+	4. emit "JUMPF 0" (after CMPEQ/CMPIN);
+	5. walk |\textit{scase}| (|\textit{com}|), generating code;
+	6. note the current instruction address |\textit{c2}|
+	    in list of case addresses;
+	7. emit "JUMP 0";
+	8. note the current instruction address |\textit{c3}|;
+	9. patch |\textit{c1}| to |\textit{c3}| for next case jump address;
+2. walk |\textit{dcase}| (|\textit{com}|), generating code;
+3. note the current instruction address |\textit{c4}|;
+4. for every address in list of case addresses,
+	1. patch address |\textit{c2}| to |\textit{c4}| for
+	    exiting / breaking out switch context;
+\end{minted}
+\codecaption{Code Template}
+\end{codelst}
+
+\if\showobjectcode1
+
+\vspace{0.5cm}
+
+\noindent The generated object code displays how the jumps for each case statement is placed along with their commands (\code{seq\_com}).
+
+\vspace{0.5cm}
+
+\begin{codelst}
+\begin{minted}[tabsize=5,bgcolor=bg]{text}
+ 4: LOADC   3
+ 7: LOADL   2
+10: LOADC   1
+13: CMPEQ
+14: JUMPF   26
+17: LOADC   9
+20: STOREL  2
+23: JUMP    54
+26: LOADL   2
+29: LOADC   2
+32: LOADC   4
+35: CMPIN
+36: JUMPF   48
+39: LOADC   5
+42: STOREL  2
+45: JUMP    54
+48: LOADC   1
+51: STOREL  2
+\end{minted}
+\codecaption{Object Code}
+\end{codelst}
+
+\fi
+
+\fi
+
+
+\act{\code{SVM.java}}
+
+\vspace{0.5cm}
+
+\noindent An instruction had to be added to the SVM in order to check "\textit{equality}" with a range guard. This was done by adding \code{CMPIN} instruction.
+
+\vspace{0.5cm}
+
+\begin{codelst}
+\begin{minted}[tabsize=5,bgcolor=bg]{java}
+case CMPIN: {
+	int w3 = data[--sp];
+	int w2 = data[--sp];
+	int w1 = data[--sp];
+	Set<Integer> range = new HashSet<Integer>();
+	for (int i=w2; i<=w3; i++)
+		range.add(i);
+	data[sp++] = (range.contains(w1) ? 1 : 0);
+	break;
+}
+\end{minted}
+\codecaption{\code{SVM.java}}
+\end{codelst}
+
+\noindent This was useful in \code{visitGuard} that would load values to the register, and do an operation accordingly. (\code{CMPIN} for ranges, and \code{CMPEQ} for others).
+
+\vspace{0.5cm}
+
+\act{Encoder}
+
+\vspace{0.5cm}
+
+\noindent The \code{expr} and \code{guard} would have to be added in the register every time in order to do an operation. Following that, the instructions are similar to an \code{if} statement involving \code{JUMPF} and noting few addresses. These addresses have to be patched for proper ordering.
+
+\if\showencodecode1
+
+\vspace{0.5cm}
+
+\begin{codelst}
+\begin{minted}[tabsize=5,bgcolor=bg]{java}
+visit(ctx.expr());
+visit(c.guard());
+int jumpaddr = obj.currentOffset();
+obj.emit12(SVM.JUMPF, 0);
+visit(c);
+int endaddr = obj.currentOffset();
+casesaddr.add(endaddr);
+obj.emit12(SVM.JUMP, 0);
+int nextaddr = obj.currentOffset();
+obj.patch12(jumpaddr, nextaddr);
+\end{minted}
+\codecaption{\code{visitSwitch} in \code{FunEncoderVisitor.java}}
+\end{codelst}
+
+\vspace{0.5cm}
+
+\fi
+
+\vspace{0.5cm}
+
+\noindent On visiting the guard (\code{visitGuard}), the essential values are added to the register and appropriate operation is emitted.
+
+\vspace{0.75cm}
+
+\begin{codelst}
+\begin{minted}[tabsize=2,bgcolor=bg]{java}
+if (ctx.DOT().size() > 0) {
+	obj.emit12(SVM.LOADC, Integer.parseInt(ctx.n1.getText()));
+	obj.emit12(SVM.LOADC, Integer.parseInt(ctx.n2.getText()));
+	obj.emit1(SVM.CMPIN);
+}
+else if (ctx.NUM().size() > 0) {
+	obj.emit12(SVM.LOADC, Integer.parseInt(ctx.NUM(0).getText()));
+	obj.emit1(SVM.CMPEQ);
+}
+else {
+	obj.emit12(SVM.LOADC, (ctx.TRUE() != null) ? 1 : 0);
+	obj.emit1(SVM.CMPEQ);
+}
+\end{minted}
+\codecaption{\code{visitGuard} in \code{FunEncoderVisitor.java}}
+\end{codelst}
+
+%=====================================
+%% Switch Command : Tests
+
+\stage{Tests}
+
+\vspace{0.5cm}
+
+\noindent Finally, the \code{switch} command was tested with a simple Boolean switch command in \code{main} (\code{switchsimple.fun}), an integer switch with no range (\code{switch1.fun}), one similar but with a range (\code{switch2.fun}), with case corresponding to default (\code{switch3.fun}), one integer and one Boolean switch command in functions being called (\code{switch4.fun}) provided from the assignment sheet, one with more than one range and overlap that should not compile (\code{switch5.fun}) and one with a nested switch (\code{switchswitch.fun}).
+
+\fi
+
+
+%==============================================================================
+
+\end{document}
