@@ -1,11 +1,11 @@
 # Test switch-commands.
 
 proc main ():
-    int s = 3
+    int s = 4
     switch s:
         case 1:
             s = 9
-        case 2..4:
+        case 4:
             s = 5
         default:
             s = 1

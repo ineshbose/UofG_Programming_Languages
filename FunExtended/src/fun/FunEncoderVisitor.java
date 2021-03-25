@@ -314,13 +314,23 @@ public class FunEncoderVisitor extends AbstractParseTreeVisitor<Void> implements
 		/**
 		 * [Code Template]
 		 */
-		for (int i=0; i<ctx.scase().size(); i++) {
-			int startaddr = obj.currentOffset();
+		List<Integer> casesaddr = new ArrayList<Integer>();
+		for (FunParser.ScaseContext c : ctx.scase()) {
 			visit(ctx.expr());
-			visit(ctx.scase(i).guard());
-			obj.emit12(SVM.JUMPF, startaddr.offset);
-			visit(ctx.scase(i));
+			visit(c.guard());
+			int jumpaddr = obj.currentOffset();
+			obj.emit12(SVM.JUMPF, 0);
+			visit(c);
+			int endaddr = obj.currentOffset();
+			casesaddr.add(endaddr);
 			obj.emit12(SVM.JUMP, 0);
+			int nextaddr = obj.currentOffset();
+			obj.patch12(jumpaddr, nextaddr);
+		}
+		visit(ctx.dcase());
+		int exitaddr = obj.currentOffset();
+		for (Integer addr : casesaddr) {
+			obj.patch12(addr, exitaddr);
 		}
 		return null;
 	}
